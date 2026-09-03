@@ -32,19 +32,34 @@ impl VisitMut for TransformVisitor {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         expr.visit_mut_children_with(self);
 
-        let Expr::Bin(bin) = expr else {
-            return;
-        };
+        match expr {
+            Expr::Bin(bin) => {
+                if self.checker(&bin.left).is_none() {
+                    return;
+                }
 
-        if self.checker(&bin.left).is_none() {
-            return;
-        }
-
-        match bin.op {
-            BinaryOp::LogicalOr => {
-                *expr = *bin.left.take();
+                match bin.op {
+                    BinaryOp::LogicalOr | BinaryOp::NullishCoalescing => {
+                        *expr = *bin.left.take();
+                    }
+                    BinaryOp::LogicalAnd => {
+                        *expr = *bin.right.take();
+                    }
+                    _ => {}
+                }
             }
-            _ => {}
-        }
+            Expr::Cond(cond) => {
+                let Some(val) = self.checker(&cond.test) else {
+                    return;
+                };
+
+                if val {
+                    *expr = *cond.cons.take();
+                } else {
+                    *expr = *cond.alt.take();
+                }
+            }
+            _ => return,
+        };
     }
 }
