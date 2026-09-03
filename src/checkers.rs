@@ -20,7 +20,6 @@ fn evaluate(node: &Expr, unresolved_mark: Mark) -> EvalToken {
                 return EvalToken::Empty;
             };
 
-            // ignore shadowed locals, e.g. `let Object = {}` inside a function
             if obj_ident.ctxt.outer() != unresolved_mark {
                 return EvalToken::Empty;
             }

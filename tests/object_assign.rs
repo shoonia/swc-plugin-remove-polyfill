@@ -205,3 +205,21 @@ fn object_assign_define_property_guard() {
         "#,
     );
 }
+
+#[test]
+fn object_assign_shadowed_not_touched() {
+    run_test(
+        r#"
+    function foo() {
+      let Object = {};
+      Object.assign || polyfillObjectAssign({}, x);
+    }
+    "#,
+        r#"
+    function foo() {
+      let Object = {};
+      Object.assign || polyfillObjectAssign({}, x);
+    }
+    "#,
+    )
+}
