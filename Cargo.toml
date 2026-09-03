@@ -1,0 +1,29 @@
+[package]
+name = "swc-plugin-remove-polyfill"
+version = "0.1.0"
+edition = "2021"
+authors = ["Alexander Zaytsev <zaytsev126@gmail.com>"]
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[dependencies]
+swc_core = { version = "77.0.*", features = [
+  "ecma_ast",
+  "ecma_visit",
+  "ecma_plugin_transform",
+] }
+
+[dev-dependencies]
+swc_core = { version = "77.0.*", features = [
+  "ecma_parser",
+  "testing_transform",
+] }

@@ -1,0 +1,19 @@
+{
+    "name": "swc-plugin-remove-polyfill",
+    "version": "0.1.0",
+    "description": "",
+    "author": "",
+    "license": "MIT",
+    "keywords": [
+        "swc-plugin"
+    ],
+    "main": "target/wasm32-wasip1/release/swc_plugin_remove_polyfill.wasm",
+    "scripts": {
+        "build": "cargo build-wasip1 --release",
+        "test": "cargo test",
+        "fixture": "UPDATE=1 cargo test --test fixture",
+        "prepack": "npm test && npm run build"
+    },
+    "files": [],
+    "preferUnplugged": true
+}
