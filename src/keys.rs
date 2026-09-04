@@ -31,6 +31,10 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
                 | "hasOwn"
         ),
         "Symbol" => matches!(prop, "for" | "keyFor"),
+        "Promise" => matches!(
+            prop,
+            "all" | "race" | "reject" | "resolve" | "allSettled" | "any" | "withResolvers"
+        ),
         _ => false,
     }
 }
@@ -70,6 +74,7 @@ pub fn prototype_group(obj: &str, prop: &str) -> bool {
                 | "at"
                 | "toWellFormed"
         ),
+        "Promise" => matches!(prop, "then" | "catch" | "finally"),
         _ => false,
     }
 }
