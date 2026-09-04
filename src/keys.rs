@@ -1,12 +1,12 @@
 use std::matches;
 
 pub fn function_group(obj: &str, prop: &str) -> bool {
-    match obj.as_ref() {
-        "Array" => matches!(prop.as_ref(), "isArray" | "from" | "of"),
+    match obj {
+        "Array" => matches!(prop, "isArray" | "from" | "of"),
         "ArrayBuffer" => prop == "isView",
-        "Date" => matches!(prop.as_ref(), "now" | "parse" | "UTC"),
+        "Date" => matches!(prop, "now" | "parse" | "UTC"),
         "Object" => matches!(
-            prop.as_ref(),
+            prop,
             "create"
                 | "keys"
                 | "getPrototypeOf"
@@ -30,9 +30,29 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
                 | "fromEntries"
                 | "hasOwn"
         ),
-        "Symbol" => matches!(prop.as_ref(), "for" | "keyFor"),
+        "Symbol" => matches!(prop, "for" | "keyFor"),
         _ => false,
     }
+}
+
+pub fn well_known_symbols(obj: &str, prop: &str) -> bool {
+    obj == "Symbol"
+        && matches!(
+            prop,
+            "unscopables"
+                | "iterator"
+                | "toPrimitive"
+                | "isConcatSpreadable"
+                | "toStringTag"
+                | "hasInstance"
+                | "match"
+                | "replace"
+                | "search"
+                | "split"
+                | "species"
+                | "asyncIterator"
+                | "matchAll"
+        )
 }
 
 pub fn is_built_in_constructor(name: &str) -> bool {

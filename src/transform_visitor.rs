@@ -9,6 +9,7 @@ pub struct TransformVisitor {
 }
 
 impl TransformVisitor {
+    #[inline(always)]
     fn is_global(&self, ctxt: SyntaxContext) -> bool {
         ctxt.outer() == self.unresolved_mark
     }
