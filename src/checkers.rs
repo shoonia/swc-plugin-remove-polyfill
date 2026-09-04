@@ -8,11 +8,6 @@ pub struct BoolToken {
     pub ctxt: SyntaxContext,
 }
 
-pub enum EvalToken {
-    Bool(BoolToken),
-    Empty,
-}
-
 #[inline(always)]
 fn is_equalities(op: &BinaryOp) -> bool {
     matches!(
@@ -57,13 +52,13 @@ fn typeof_arg(expr: &Expr) -> Option<SyntaxContext> {
     None
 }
 
-pub fn evaluate(node: &Expr) -> EvalToken {
+pub fn evaluate(node: &Expr) -> Option<BoolToken> {
     match node {
         Expr::Member(member) => {
             if let Some(ctxt) = is_member_fn(member) {
-                EvalToken::Bool(BoolToken { value: true, ctxt })
+                Some(BoolToken { value: true, ctxt })
             } else {
-                EvalToken::Empty
+                None
             }
         }
         Expr::Bin(bin) => {
@@ -71,7 +66,7 @@ pub fn evaluate(node: &Expr) -> EvalToken {
                 if let Some(ctxt) = typeof_arg(&bin.left) {
                     if let Expr::Lit(lit) = &*bin.right {
                         if let Lit::Str(str_lit) = lit {
-                            return EvalToken::Bool(BoolToken {
+                            return Some(BoolToken {
                                 value: calc_eq(str_lit.value == "function", bin.op),
                                 ctxt: ctxt,
                             });
@@ -82,7 +77,7 @@ pub fn evaluate(node: &Expr) -> EvalToken {
                 if let Some(ctxt) = typeof_arg(&bin.right) {
                     if let Expr::Lit(lit) = &*bin.left {
                         if let Lit::Str(str_lit) = lit {
-                            return EvalToken::Bool(BoolToken {
+                            return Some(BoolToken {
                                 value: calc_eq(str_lit.value == "function", bin.op),
                                 ctxt: ctxt,
                             });
@@ -90,8 +85,8 @@ pub fn evaluate(node: &Expr) -> EvalToken {
                     }
                 }
             }
-            EvalToken::Empty
+            None
         }
-        _ => EvalToken::Empty,
+        _ => None,
     }
 }

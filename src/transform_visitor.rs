@@ -1,4 +1,4 @@
-use crate::checkers::{evaluate, EvalToken};
+use crate::checkers::evaluate;
 use swc_core::common::util::take::Take;
 use swc_core::common::{Mark, SyntaxContext};
 use swc_core::ecma::ast::{BinaryOp, EmptyStmt, Expr, Stmt};
@@ -14,16 +14,7 @@ impl TransformVisitor {
     }
 
     fn checker(&self, node: &Expr) -> Option<bool> {
-        match evaluate(node) {
-            EvalToken::Bool(token) => {
-                if self.is_global(token.ctxt) {
-                    Some(token.value)
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        }
+        evaluate(node).and_then(|token| self.is_global(token.ctxt).then_some(token.value))
     }
 }
 
