@@ -1,4 +1,4 @@
-use crate::checkers::evaluate;
+use crate::evaluate::evaluate;
 use swc_core::common::util::take::Take;
 use swc_core::common::{Mark, SyntaxContext};
 use swc_core::ecma::ast::{BinaryOp, EmptyStmt, Expr, Stmt};

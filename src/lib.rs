@@ -1,4 +1,4 @@
-pub mod checkers;
+pub mod evaluate;
 pub mod keys;
 pub mod transform_visitor;
 

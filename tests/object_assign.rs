@@ -19,9 +19,7 @@ fn object_assign_basic_or_polyfill() {
           return e;
         };
         "#,
-        r#"
-        var assign = Object.assign;
-        "#,
+        "var assign = Object.assign;",
     );
 }
 
@@ -127,9 +125,7 @@ fn object_assign_typeof_ternary() {
           return a
         }
         "#,
-        r#"
-        var pa = Object.assign;
-        "#,
+        "var pa = Object.assign;",
     );
 }
 

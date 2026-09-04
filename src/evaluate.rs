@@ -1,9 +1,9 @@
-use crate::keys::function_group;
+use crate::keys::{function_group, is_built_in_constructor};
 use std::matches;
 use swc_core::common::SyntaxContext;
 use swc_core::ecma::ast::{BinaryOp, Expr, Lit, MemberExpr, MemberProp, UnaryOp};
 
-pub struct BoolToken {
+pub struct Token {
     pub value: bool,
     pub ctxt: SyntaxContext,
 }
@@ -49,14 +49,20 @@ fn typeof_arg(expr: &Expr) -> Option<SyntaxContext> {
         return is_member_fn(m);
     }
 
+    if let Some(i) = unary.arg.as_ident() {
+        if is_built_in_constructor(i.sym.as_ref()) {
+            return Some(i.ctxt);
+        }
+    }
+
     None
 }
 
-pub fn evaluate(node: &Expr) -> Option<BoolToken> {
+pub fn evaluate(node: &Expr) -> Option<Token> {
     match node {
         Expr::Member(member) => {
             if let Some(ctxt) = is_member_fn(member) {
-                Some(BoolToken { value: true, ctxt })
+                Some(Token { value: true, ctxt })
             } else {
                 None
             }
@@ -66,7 +72,7 @@ pub fn evaluate(node: &Expr) -> Option<BoolToken> {
                 if let Some(ctxt) = typeof_arg(&bin.left) {
                     if let Expr::Lit(lit) = &*bin.right {
                         if let Lit::Str(str_lit) = lit {
-                            return Some(BoolToken {
+                            return Some(Token {
                                 value: calc_eq(str_lit.value == "function", bin.op),
                                 ctxt: ctxt,
                             });
@@ -77,7 +83,7 @@ pub fn evaluate(node: &Expr) -> Option<BoolToken> {
                 if let Some(ctxt) = typeof_arg(&bin.right) {
                     if let Expr::Lit(lit) = &*bin.left {
                         if let Lit::Str(str_lit) = lit {
-                            return Some(BoolToken {
+                            return Some(Token {
                                 value: calc_eq(str_lit.value == "function", bin.op),
                                 ctxt: ctxt,
                             });
@@ -86,6 +92,16 @@ pub fn evaluate(node: &Expr) -> Option<BoolToken> {
                 }
             }
             None
+        }
+        Expr::Ident(ident) => {
+            if is_built_in_constructor(ident.sym.as_ref()) {
+                Some(Token {
+                    value: true,
+                    ctxt: ident.ctxt,
+                })
+            } else {
+                None
+            }
         }
         _ => None,
     }
