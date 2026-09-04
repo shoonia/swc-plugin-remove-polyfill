@@ -31,24 +31,22 @@ fn calc_eq(val: bool, op: BinaryOp) -> bool {
 }
 
 fn evaluate_member(memb: &MemberExpr) -> Option<(&str, SyntaxContext)> {
-    let Expr::Ident(obj) = &*memb.obj else {
-        return None;
-    };
-
     let MemberProp::Ident(prop) = &memb.prop else {
         return None;
     };
 
-    let o = obj.sym.as_ref();
-    let p = prop.sym.as_ref();
+    if let Expr::Ident(obj) = &*memb.obj {
+        let o = obj.sym.as_ref();
+        let p = prop.sym.as_ref();
 
-    if function_group(o, p) {
-        return Some((FUN, obj.ctxt));
-    }
+        if function_group(o, p) {
+            return Some((FUN, obj.ctxt));
+        }
 
-    if well_known_symbols(o, p) {
-        return Some((SYM, obj.ctxt));
-    }
+        if well_known_symbols(o, p) {
+            return Some((SYM, obj.ctxt));
+        }
+    };
 
     None
 }
