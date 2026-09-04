@@ -1,7 +1,7 @@
 use crate::checkers::{evaluate, EvalToken};
 use swc_core::common::util::take::Take;
 use swc_core::common::{Mark, SyntaxContext};
-use swc_core::ecma::ast::{BinaryOp, Expr};
+use swc_core::ecma::ast::{BinaryOp, EmptyStmt, Expr, Stmt};
 use swc_core::ecma::visit::{VisitMut, VisitMutWith};
 
 pub struct TransformVisitor {
@@ -28,6 +28,16 @@ impl TransformVisitor {
 }
 
 impl VisitMut for TransformVisitor {
+    fn visit_mut_stmt(&mut self, stmt: &mut Stmt) {
+        stmt.visit_mut_children_with(self);
+
+        if let Some(value) = stmt.as_expr() {
+            if let Some(_) = self.checker(&value.expr) {
+                *stmt = EmptyStmt { span: value.span }.into();
+            }
+        }
+    }
+
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         expr.visit_mut_children_with(self);
 

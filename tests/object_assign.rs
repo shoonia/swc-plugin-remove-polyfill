@@ -177,9 +177,7 @@ fn object_assign_define_property_guard() {
           configurable: !0
         });
         "#,
-        r#"
-        "function" != typeof Object.assign;
-        "#,
+        ";",
     );
 }
 
