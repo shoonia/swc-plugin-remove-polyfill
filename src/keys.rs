@@ -31,7 +31,10 @@ fn is_object_method(prop: &str) -> bool {
 
 pub fn function_group(obj: &str, prop: &str) -> bool {
     match obj.as_ref() {
+        "Array" => matches!(prop.as_ref(), "isArray" | "from" | "of"),
+        "ArrayBuffer" => prop == "isView",
         "Object" => is_object_method(prop.as_ref()),
+        "Symbol" => matches!(prop.as_ref(), "for" | "keyFor"),
         _ => false,
     }
 }
