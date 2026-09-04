@@ -1,4 +1,4 @@
-use crate::keys::{function_group, is_built_in_constructor};
+use crate::keys::{function_group, is_built_in_constructor, is_built_in_member};
 use std::matches;
 use swc_core::common::SyntaxContext;
 use swc_core::ecma::ast::{BinaryOp, Expr, Lit, MemberExpr, MemberProp, UnaryOp};
@@ -36,7 +36,10 @@ fn is_member_fn(m: &MemberExpr) -> Option<SyntaxContext> {
     function_group(obj.sym.as_ref(), prop.sym.as_ref()).then_some(obj.ctxt)
 }
 
-fn typeof_arg(expr: &Expr) -> Option<SyntaxContext> {
+const FUN: &str = "function";
+const OBJ: &str = "object";
+
+fn typeof_arg(expr: &Expr) -> Option<(&str, SyntaxContext)> {
     let Expr::Unary(unary) = expr else {
         return None;
     };
@@ -46,12 +49,18 @@ fn typeof_arg(expr: &Expr) -> Option<SyntaxContext> {
     }
 
     if let Some(m) = unary.arg.as_member() {
-        return is_member_fn(m);
+        return is_member_fn(m).map(|ctxt| (FUN, ctxt));
     }
 
     if let Some(i) = unary.arg.as_ident() {
-        if is_built_in_constructor(i.sym.as_ref()) {
-            return Some(i.ctxt);
+        let name = i.sym.as_ref();
+
+        if is_built_in_constructor(name) {
+            return Some(((FUN), i.ctxt));
+        }
+
+        if is_built_in_member(name) {
+            return Some((OBJ, i.ctxt));
         }
     }
 
@@ -69,23 +78,23 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
         }
         Expr::Bin(bin) => {
             if is_equalities(&bin.op) {
-                if let Some(ctxt) = typeof_arg(&bin.left) {
+                if let Some(res) = typeof_arg(&bin.left) {
                     if let Expr::Lit(lit) = &*bin.right {
                         if let Lit::Str(str_lit) = lit {
                             return Some(Token {
-                                value: calc_eq(str_lit.value == "function", bin.op),
-                                ctxt: ctxt,
+                                value: calc_eq(str_lit.value == res.0, bin.op),
+                                ctxt: res.1,
                             });
                         }
                     }
                 }
 
-                if let Some(ctxt) = typeof_arg(&bin.right) {
+                if let Some(res) = typeof_arg(&bin.right) {
                     if let Expr::Lit(lit) = &*bin.left {
                         if let Lit::Str(str_lit) = lit {
                             return Some(Token {
-                                value: calc_eq(str_lit.value == "function", bin.op),
-                                ctxt: ctxt,
+                                value: calc_eq(str_lit.value == res.0, bin.op),
+                                ctxt: res.1,
                             });
                         }
                     }
@@ -94,7 +103,8 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
             None
         }
         Expr::Ident(ident) => {
-            if is_built_in_constructor(ident.sym.as_ref()) {
+            let name = ident.sym.as_ref();
+            if is_built_in_constructor(name) || is_built_in_member(name) {
                 Some(Token {
                     value: true,
                     ctxt: ident.ctxt,
