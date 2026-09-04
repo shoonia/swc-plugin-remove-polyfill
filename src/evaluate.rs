@@ -12,6 +12,12 @@ pub struct Token {
     pub ctxt: SyntaxContext,
 }
 
+impl Token {
+    pub fn some(value: bool, ctxt: SyntaxContext) -> Option<Self> {
+        Some(Self { value, ctxt })
+    }
+}
+
 #[inline(always)]
 fn is_equalities(op: &BinaryOp) -> bool {
     matches!(
@@ -88,7 +94,7 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
     match node {
         Expr::Member(member) => {
             if let Some((_, ctxt)) = evaluate_member(member) {
-                Some(Token { value: true, ctxt })
+                Token::some(true, ctxt)
             } else {
                 None
             }
@@ -98,10 +104,7 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                 if let Some(res) = evaluate_typeof(&bin.left) {
                     if let Expr::Lit(lit) = &*bin.right {
                         if let Lit::Str(str_lit) = lit {
-                            return Some(Token {
-                                value: calc_eq(str_lit.value == res.0, bin.op),
-                                ctxt: res.1,
-                            });
+                            return Token::some(calc_eq(str_lit.value == res.0, bin.op), res.1);
                         }
                     }
                 }
@@ -109,23 +112,38 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                 if let Some(res) = evaluate_typeof(&bin.right) {
                     if let Expr::Lit(lit) = &*bin.left {
                         if let Lit::Str(str_lit) = lit {
-                            return Some(Token {
-                                value: calc_eq(str_lit.value == res.0, bin.op),
-                                ctxt: res.1,
-                            });
+                            return Token::some(calc_eq(str_lit.value == res.0, bin.op), res.1);
                         }
                     }
                 }
             }
             None
         }
+        Expr::Unary(unary) => {
+            if unary.op != UnaryOp::Bang {
+                return None;
+            }
+
+            if let Some(m) = unary.arg.as_member() {
+                if let Some((_, ctxt)) = evaluate_member(m) {
+                    return Token::some(false, ctxt);
+                }
+            }
+
+            if let Some(i) = unary.arg.as_ident() {
+                let name = i.sym.as_ref();
+
+                if is_built_in_constructor(name) || is_built_in_member(name) {
+                    return Token::some(false, i.ctxt);
+                }
+            }
+
+            None
+        }
         Expr::Ident(ident) => {
             let name = ident.sym.as_ref();
             if is_built_in_constructor(name) || is_built_in_member(name) {
-                Some(Token {
-                    value: true,
-                    ctxt: ident.ctxt,
-                })
+                Token::some(true, ident.ctxt)
             } else {
                 None
             }
