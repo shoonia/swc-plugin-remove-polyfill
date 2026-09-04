@@ -35,6 +35,45 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
     }
 }
 
+pub fn prototype_group(obj: &str, prop: &str) -> bool {
+    match obj {
+        "String" => matches!(
+            prop,
+            "indexOf"
+                | "localeCompare"
+                | "match"
+                | "replace"
+                | "split"
+                | "substring"
+                | "search"
+                | "toLocaleLowerCase"
+                | "toLocaleUpperCase"
+                | "toLowerCase"
+                | "toUpperCase"
+                | "toString"
+                | "valueOf"
+                | "trim"
+                | "normalize"
+                | "includes"
+                | "startsWith"
+                | "endsWith"
+                | "repeat"
+                | "codePointAt"
+                | "padStart"
+                | "padEnd"
+                | "trimStart"
+                | "trimEnd"
+                | "trimLeft"
+                | "trimRight"
+                | "matchAll"
+                | "replaceAll"
+                | "at"
+                | "toWellFormed"
+        ),
+        _ => false,
+    }
+}
+
 pub fn well_known_symbols(obj: &str, prop: &str) -> bool {
     obj == "Symbol"
         && matches!(

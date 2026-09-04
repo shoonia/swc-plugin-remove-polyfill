@@ -1,6 +1,4 @@
-use crate::keys::{
-    function_group, is_built_in_constructor, is_built_in_member, well_known_symbols,
-};
+use crate::keys::*;
 use std::matches;
 use swc_core::common::SyntaxContext;
 use swc_core::ecma::ast::{BinaryOp, Expr, Lit, MemberExpr, MemberProp, UnaryOp};
@@ -46,7 +44,14 @@ fn evaluate_member(memb: &MemberExpr) -> Option<(&str, SyntaxContext)> {
         if well_known_symbols(o, p) {
             return Some((SYM, obj.ctxt));
         }
-    };
+    } else if let Expr::Member(m) = &*memb.obj {
+        if m.prop.as_ident().is_some_and(|i| i.sym == "prototype") {
+            if let Expr::Ident(idn) = &*m.obj {
+                return prototype_group(idn.sym.as_ref(), prop.sym.as_ref())
+                    .then_some((FUN, idn.ctxt));
+            }
+        }
+    }
 
     None
 }
