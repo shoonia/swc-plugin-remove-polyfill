@@ -60,7 +60,7 @@ fn object_assign_this_helper() {
                 Object.prototype.hasOwnProperty.call(t, o) && (e[o] = t[o]);
             return e;
           },
-            i.apply(this, arguments);
+          i.apply(this, arguments);
         };
         "#,
         r#"
@@ -128,13 +128,7 @@ fn object_assign_typeof_ternary() {
         }
         "#,
         r#"
-        var pa = "function" == typeof Object.assign ? Object.assign : function(a, b) {
-            for(var c = 1; c < arguments.length; c++){
-                var d = arguments[c];
-                if (d) for(var e in d)Object.prototype.hasOwnProperty.call(d, e) && (a[e] = d[e]);
-            }
-            return a;
-        };
+        var pa = Object.assign;
         "#,
     );
 }
@@ -184,18 +178,7 @@ fn object_assign_define_property_guard() {
         });
         "#,
         r#"
-        "function" != typeof Object.assign && Object.defineProperty(Object, "assign", {
-            value: function(e, t) {
-                if (null == e) throw new TypeError("Cannot convert undefined or null to object");
-                for(var o = Object(e), n = 1; n < arguments.length; n++){
-                    var r = arguments[n];
-                    if (null != r) for(var i in r)Object.prototype.hasOwnProperty.call(r, i) && (o[i] = r[i]);
-                }
-                return o;
-            },
-            writable: !0,
-            configurable: !0
-        });
+        "function" != typeof Object.assign;
         "#,
     );
 }

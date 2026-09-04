@@ -1,4 +1,5 @@
 pub mod checkers;
+pub mod keys;
 pub mod transform_visitor;
 
 use crate::transform_visitor::TransformVisitor;

@@ -15,15 +15,14 @@ impl TransformVisitor {
 
     fn checker(&self, node: &Expr) -> Option<bool> {
         match evaluate(node) {
-            EvalToken::Member(member) => {
-                if member.obj == "Object" && member.prop == "assign" && self.is_global(member.ctxt)
-                {
-                    Some(true)
+            EvalToken::Bool(token) => {
+                if self.is_global(token.ctxt) {
+                    Some(token.value)
                 } else {
                     None
                 }
             }
-            EvalToken::Empty => None,
+            _ => None,
         }
     }
 }
@@ -34,32 +33,38 @@ impl VisitMut for TransformVisitor {
 
         match expr {
             Expr::Bin(bin) => {
-                if self.checker(&bin.left).is_none() {
+                let Some(val) = self.checker(&bin.left) else {
                     return;
-                }
+                };
 
                 match bin.op {
                     BinaryOp::LogicalOr | BinaryOp::NullishCoalescing => {
-                        *expr = *bin.left.take();
+                        if val {
+                            *expr = *bin.left.take();
+                        } else {
+                            *expr = *bin.right.take();
+                        }
                     }
                     BinaryOp::LogicalAnd => {
-                        *expr = *bin.right.take();
+                        if val {
+                            *expr = *bin.right.take();
+                        } else {
+                            *expr = *bin.left.take();
+                        }
                     }
                     _ => {}
                 }
             }
             Expr::Cond(cond) => {
-                let Some(val) = self.checker(&cond.test) else {
-                    return;
-                };
-
-                if val {
-                    *expr = *cond.cons.take();
-                } else {
-                    *expr = *cond.alt.take();
+                if let Some(val) = self.checker(&cond.test) {
+                    if val {
+                        *expr = *cond.cons.take();
+                    } else {
+                        *expr = *cond.alt.take();
+                    }
                 }
             }
-            _ => return,
+            _ => {}
         };
     }
 }
