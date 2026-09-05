@@ -39,24 +39,28 @@ fn evaluate_member(memb: &MemberExpr) -> Option<(&str, SyntaxContext)> {
         return None;
     };
 
-    if let Expr::Ident(obj) = &*memb.obj {
-        let o = obj.sym.as_ref();
-        let p = prop.sym.as_ref();
+    match memb.obj.as_ref() {
+        Expr::Ident(obj) => {
+            let o = obj.sym.as_ref();
+            let p = prop.sym.as_ref();
 
-        if function_group(o, p) {
-            return Some((FUN, obj.ctxt));
-        }
+            if function_group(o, p) {
+                return Some((FUN, obj.ctxt));
+            }
 
-        if well_known_symbols(o, p) {
-            return Some((SYM, obj.ctxt));
-        }
-    } else if let Expr::Member(m) = &*memb.obj {
-        if m.prop.as_ident().is_some_and(|i| i.sym == "prototype") {
-            if let Expr::Ident(idn) = &*m.obj {
-                return prototype_group(idn.sym.as_ref(), prop.sym.as_ref())
-                    .then_some((FUN, idn.ctxt));
+            if well_known_symbols(o, p) {
+                return Some((SYM, obj.ctxt));
             }
         }
+        Expr::Member(m) => {
+            if m.prop.as_ident().is_some_and(|i| i.sym == "prototype") {
+                if let Expr::Ident(idn) = &*m.obj {
+                    return prototype_group(idn.sym.as_ref(), prop.sym.as_ref())
+                        .then_some((FUN, idn.ctxt));
+                }
+            }
+        }
+        _ => {}
     }
 
     None
@@ -124,8 +128,8 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                 return None;
             }
 
-            if let Some(m) = unary.arg.as_member() {
-                if let Some((_, ctxt)) = evaluate_member(m) {
+            if let Some(memb) = unary.arg.as_member() {
+                if let Some((_, ctxt)) = evaluate_member(memb) {
                     return Token::some(false, ctxt);
                 }
             }
