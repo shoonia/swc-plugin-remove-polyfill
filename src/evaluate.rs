@@ -20,12 +20,17 @@ fn is_equalities(op: &BinaryOp) -> bool {
     )
 }
 
-fn evaluate_member(memb: &MemberExpr) -> Option<(&str, SyntaxContext)> {
-    let MemberProp::Ident(prop) = &memb.prop else {
+#[inline(always)]
+fn is_ident_prototype(prop: &MemberProp) -> bool {
+    prop.as_ident().is_some_and(|i| i.sym == "prototype")
+}
+
+fn evaluate_member(member: &MemberExpr) -> Option<(&str, SyntaxContext)> {
+    let MemberProp::Ident(prop) = &member.prop else {
         return None;
     };
 
-    match memb.obj.as_ref() {
+    match member.obj.as_ref() {
         Expr::Ident(obj) => {
             let o = obj.sym.as_ref();
             let p = prop.sym.as_ref();
@@ -38,11 +43,11 @@ fn evaluate_member(memb: &MemberExpr) -> Option<(&str, SyntaxContext)> {
                 return Some((SYM, obj.ctxt));
             }
         }
-        Expr::Member(m) => {
-            if m.prop.as_ident().is_some_and(|i| i.sym == "prototype") {
-                if let Expr::Ident(idn) = &*m.obj {
-                    return prototype_group(idn.sym.as_ref(), prop.sym.as_ref())
-                        .then_some((FUN, idn.ctxt));
+        Expr::Member(memb) => {
+            if is_ident_prototype(&memb.prop) {
+                if let Expr::Ident(ident) = &*memb.obj {
+                    return prototype_group(ident.sym.as_ref(), prop.sym.as_ref())
+                        .then_some((FUN, ident.ctxt));
                 }
             }
         }
@@ -113,6 +118,31 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
 
                 if let Some(right) = bin.right.as_unary() {
                     return evaluate_unary_comparison(right, &bin.left, bin.op);
+                }
+            } else if bin.op == BinaryOp::In {
+                if let Some(key) = bin
+                    .left
+                    .as_lit()
+                    .and_then(Lit::as_str)
+                    .and_then(|str| str.value.as_str())
+                {
+                    if let Some(ident) = bin.right.as_ident() {
+                        if function_group(ident.sym.as_ref(), key) {
+                            return Some(Token {
+                                value: true,
+                                ctxt: ident.ctxt,
+                            });
+                        }
+                    } else if let Some(memb) = bin.right.as_member() {
+                        if is_ident_prototype(&memb.prop) {
+                            if let Expr::Ident(ident) = &*memb.obj {
+                                return prototype_group(ident.sym.as_ref(), key).then_some(Token {
+                                    value: true,
+                                    ctxt: ident.ctxt,
+                                });
+                            }
+                        }
+                    }
                 }
             }
         }
