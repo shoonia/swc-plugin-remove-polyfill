@@ -2,7 +2,7 @@ use std::matches;
 
 pub fn function_group(obj: &str, prop: &str) -> bool {
     match obj {
-        "Array" => matches!(prop, "isArray" | "from" | "of"),
+        "Array" => matches!(prop, "from" | "fromAsync" | "isArray" | "of"),
         "ArrayBuffer" => prop == "isView",
         "Date" => matches!(prop, "now" | "parse" | "UTC"),
         "Object" => matches!(
@@ -98,8 +98,46 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
         ),
         "JSON" => matches!(prop, "parse" | "stringify"),
         "Error" => prop == "captureStackTrace",
+        "URL" => matches!(
+            prop,
+            "canParse" | "createObjectURL" | "parse" | "revokeObjectURL"
+        ),
         _ => false,
     }
+}
+
+fn array_like_proto(prop: &str) -> bool {
+    matches!(
+        prop,
+        "toString"
+            | "join"
+            | "reverse"
+            | "slice"
+            | "sort"
+            | "indexOf"
+            | "lastIndexOf"
+            | "every"
+            | "some"
+            | "forEach"
+            | "map"
+            | "filter"
+            | "reduce"
+            | "reduceRight"
+            | "find"
+            | "findIndex"
+            | "fill"
+            | "copyWithin"
+            | "entries"
+            | "keys"
+            | "values"
+            | "at"
+            | "includes"
+            | "findLast"
+            | "findLastIndex"
+            | "toReversed"
+            | "toSorted"
+            | "with"
+    )
 }
 
 pub fn prototype_group(obj: &str, prop: &str) -> bool {
@@ -138,6 +176,52 @@ pub fn prototype_group(obj: &str, prop: &str) -> bool {
                 | "toWellFormed"
         ),
         "Promise" => matches!(prop, "then" | "catch" | "finally"),
+        "Array" => {
+            matches!(
+                prop,
+                "concat"
+                    | "shift"
+                    | "unshift"
+                    | "splice"
+                    | "pop"
+                    | "push"
+                    | "toLocaleString"
+                    | "flat"
+                    | "flatMap"
+                    | "toSpliced"
+            ) || array_like_proto(prop)
+        }
+        "Int8Array" | "Int16Array" | "Int32Array" | "Uint8Array" | "Uint16Array"
+        | "Uint32Array" | "Uint8ClampedArray" | "Float32Array" | "Float64Array"
+        | "BigInt64Array" | "BigUint64Array" => array_like_proto(prop),
+        "ArrayBuffer" => prop == "slice",
+        "Function" => prop == "bind",
+        "Blob" => matches!(prop, "slice" | "arrayBuffer" | "stream" | "text"),
+        "DataView" => matches!(
+            prop,
+            "getInt8"
+                | "setInt8"
+                | "getInt16"
+                | "setInt16"
+                | "getInt32"
+                | "setInt32"
+                | "getUint8"
+                | "setUint8"
+                | "getUint16"
+                | "setUint16"
+                | "getUint32"
+                | "setUint32"
+                | "getFloat32"
+                | "setFloat32"
+                | "getFloat64"
+                | "setFloat64"
+                | "getBigInt64"
+                | "setBigInt64"
+                | "getBigUint64"
+                | "setBigUint64"
+                | "getFloat16"
+                | "setFloat16"
+        ),
         _ => false,
     }
 }
