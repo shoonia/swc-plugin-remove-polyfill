@@ -35,6 +35,7 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
             prop,
             "all" | "race" | "reject" | "resolve" | "allSettled" | "any" | "withResolvers"
         ),
+        "Proxy" => prop == "revocable",
         _ => false,
     }
 }
