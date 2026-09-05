@@ -25,7 +25,7 @@ fn object_defineproperties_drop_else() {
       } else a[c] = b[c];
       "#,
         r#"
-      if (true) {
+      {
         var d = Object.getOwnPropertyDescriptor(b, c);
         d && Object.defineProperty(a, c, d);
       }

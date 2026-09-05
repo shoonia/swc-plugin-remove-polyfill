@@ -1,7 +1,7 @@
 use crate::evaluate::evaluate;
 use swc_core::common::util::take::Take;
 use swc_core::common::{Mark, Span, SyntaxContext};
-use swc_core::ecma::ast::{BinaryOp, Bool, EmptyStmt, Expr, Stmt};
+use swc_core::ecma::ast::{BinaryOp, EmptyStmt, Expr, Stmt};
 use swc_core::ecma::visit::{VisitMut, VisitMutWith};
 
 #[inline(always)]
@@ -34,21 +34,17 @@ impl VisitMut for TransformVisitor {
                     *stmt = empty_stmt(value.span);
                 }
             }
-            Stmt::If(value) => {
-                if let Some(val) = self.checker(&value.test) {
-                    if val {
-                        if value.alt.is_some() {
-                            value.alt = None;
-                        }
+            Stmt::If(if_stmt) => {
+                if let Some(val) = self.checker(&if_stmt.test) {
+                    *stmt = *if val {
+                        if_stmt.cons.take()
                     } else {
-                        if value.alt.is_none() {
-                            *stmt = empty_stmt(value.span);
-                            return;
+                        if let Some(ref mut alt) = if_stmt.alt {
+                            alt.take()
                         } else {
-                            *value.cons = empty_stmt(value.span);
+                            empty_stmt(if_stmt.span).into()
                         }
                     }
-                    *value.test = Bool::from(val).into();
                 }
             }
             _ => {}
