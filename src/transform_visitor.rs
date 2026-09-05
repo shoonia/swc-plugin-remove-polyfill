@@ -38,12 +38,10 @@ impl VisitMut for TransformVisitor {
                 if let Some(val) = self.checker(&if_stmt.test) {
                     *stmt = *if val {
                         if_stmt.cons.take()
+                    } else if let Some(ref mut alt) = if_stmt.alt {
+                        alt.take()
                     } else {
-                        if let Some(ref mut alt) = if_stmt.alt {
-                            alt.take()
-                        } else {
-                            empty_stmt(if_stmt.span).into()
-                        }
+                        empty_stmt(if_stmt.span).into()
                     }
                 }
             }
@@ -55,29 +53,27 @@ impl VisitMut for TransformVisitor {
         expr.visit_mut_children_with(self);
 
         match expr {
-            Expr::Bin(bin) => {
-                let Some(val) = self.checker(&bin.left) else {
-                    return;
-                };
-
-                match bin.op {
-                    BinaryOp::LogicalOr | BinaryOp::NullishCoalescing => {
+            Expr::Bin(bin) => match bin.op {
+                BinaryOp::LogicalOr | BinaryOp::NullishCoalescing => {
+                    if let Some(val) = self.checker(&bin.left) {
                         *expr = *if val {
                             bin.left.take()
                         } else {
                             bin.right.take()
                         };
-                    }
-                    BinaryOp::LogicalAnd => {
-                        *expr = *if val {
-                            bin.right.take()
-                        } else {
-                            bin.left.take()
-                        };
-                    }
-                    _ => {}
+                    };
                 }
-            }
+                BinaryOp::LogicalAnd => {
+                    if let Some(val) = self.checker(&bin.left) {
+                        *expr = *if val {
+                            bin.right.take()
+                        } else {
+                            bin.left.take()
+                        };
+                    };
+                }
+                _ => {}
+            },
             Expr::Cond(cond) => {
                 if let Some(val) = self.checker(&cond.test) {
                     *expr = *if val {
