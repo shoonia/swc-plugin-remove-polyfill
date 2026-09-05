@@ -66,28 +66,28 @@ impl VisitMut for TransformVisitor {
 
                 match bin.op {
                     BinaryOp::LogicalOr | BinaryOp::NullishCoalescing => {
-                        if val {
-                            *expr = *bin.left.take();
+                        *expr = *if val {
+                            bin.left.take()
                         } else {
-                            *expr = *bin.right.take();
-                        }
+                            bin.right.take()
+                        };
                     }
                     BinaryOp::LogicalAnd => {
-                        if val {
-                            *expr = *bin.right.take();
+                        *expr = *if val {
+                            bin.right.take()
                         } else {
-                            *expr = *bin.left.take();
-                        }
+                            bin.left.take()
+                        };
                     }
                     _ => {}
                 }
             }
             Expr::Cond(cond) => {
                 if let Some(val) = self.checker(&cond.test) {
-                    if val {
-                        *expr = *cond.cons.take();
+                    *expr = *if val {
+                        cond.cons.take()
                     } else {
-                        *expr = *cond.alt.take();
+                        cond.alt.take()
                     }
                 }
             }
