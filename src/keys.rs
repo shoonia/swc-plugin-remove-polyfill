@@ -1,6 +1,6 @@
 use std::matches;
 
-pub fn function_group(obj: &str, prop: &str) -> bool {
+pub fn is_static_method(obj: &str, prop: &str) -> bool {
     match obj {
         "Array" => matches!(prop, "from" | "fromAsync" | "isArray" | "of"),
         "ArrayBuffer" => prop == "isView",
@@ -106,7 +106,7 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
     }
 }
 
-fn array_like_proto(prop: &str) -> bool {
+fn is_array_like_prototype_method(prop: &str) -> bool {
     matches!(
         prop,
         "toString"
@@ -140,7 +140,7 @@ fn array_like_proto(prop: &str) -> bool {
     )
 }
 
-pub fn prototype_group(obj: &str, prop: &str) -> bool {
+pub fn is_prototype_method(obj: &str, prop: &str) -> bool {
     match obj {
         "String" => matches!(
             prop,
@@ -189,11 +189,11 @@ pub fn prototype_group(obj: &str, prop: &str) -> bool {
                     | "flat"
                     | "flatMap"
                     | "toSpliced"
-            ) || array_like_proto(prop)
+            ) || is_array_like_prototype_method(prop)
         }
         "Int8Array" | "Int16Array" | "Int32Array" | "Uint8Array" | "Uint16Array"
         | "Uint32Array" | "Uint8ClampedArray" | "Float32Array" | "Float64Array"
-        | "BigInt64Array" | "BigUint64Array" => array_like_proto(prop),
+        | "BigInt64Array" | "BigUint64Array" => is_array_like_prototype_method(prop),
         "ArrayBuffer" => prop == "slice",
         "Function" => prop == "bind",
         "Blob" => matches!(prop, "slice" | "arrayBuffer" | "stream" | "text"),
@@ -226,7 +226,7 @@ pub fn prototype_group(obj: &str, prop: &str) -> bool {
     }
 }
 
-pub fn well_known_symbols(obj: &str, prop: &str) -> bool {
+pub fn is_well_known_symbol(obj: &str, prop: &str) -> bool {
     obj == "Symbol"
         && matches!(
             prop,

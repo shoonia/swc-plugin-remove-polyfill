@@ -21,7 +21,7 @@ fn is_equalities(op: &BinaryOp) -> bool {
 }
 
 #[inline(always)]
-fn is_ident_prototype(prop: &MemberProp) -> bool {
+fn is_prototype_ident(prop: &MemberProp) -> bool {
     prop.as_ident().is_some_and(|i| i.sym == "prototype")
 }
 
@@ -35,18 +35,18 @@ fn evaluate_member(member: &MemberExpr) -> Option<(&str, SyntaxContext)> {
             let o = obj.sym.as_ref();
             let p = prop.sym.as_ref();
 
-            if function_group(o, p) {
+            if is_static_method(o, p) {
                 return Some((FUN, obj.ctxt));
             }
 
-            if well_known_symbols(o, p) {
+            if is_well_known_symbol(o, p) {
                 return Some((SYM, obj.ctxt));
             }
         }
         Expr::Member(memb) => {
-            if is_ident_prototype(&memb.prop) {
+            if is_prototype_ident(&memb.prop) {
                 if let Expr::Ident(ident) = &*memb.obj {
-                    return prototype_group(ident.sym.as_ref(), prop.sym.as_ref())
+                    return is_prototype_method(ident.sym.as_ref(), prop.sym.as_ref())
                         .then_some((FUN, ident.ctxt));
                 }
             }
@@ -127,19 +127,21 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                     .and_then(|str| str.value.as_str())
                 {
                     if let Some(ident) = bin.right.as_ident() {
-                        if function_group(ident.sym.as_ref(), key) {
+                        if is_static_method(ident.sym.as_ref(), key) {
                             return Some(Token {
                                 value: true,
                                 ctxt: ident.ctxt,
                             });
                         }
                     } else if let Some(memb) = bin.right.as_member() {
-                        if is_ident_prototype(&memb.prop) {
+                        if is_prototype_ident(&memb.prop) {
                             if let Expr::Ident(ident) = &*memb.obj {
-                                return prototype_group(ident.sym.as_ref(), key).then_some(Token {
-                                    value: true,
-                                    ctxt: ident.ctxt,
-                                });
+                                return is_prototype_method(ident.sym.as_ref(), key).then_some(
+                                    Token {
+                                        value: true,
+                                        ctxt: ident.ctxt,
+                                    },
+                                );
                             }
                         }
                     }
