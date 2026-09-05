@@ -12,12 +12,6 @@ pub struct Token {
     pub ctxt: SyntaxContext,
 }
 
-impl Token {
-    pub fn some(value: bool, ctxt: SyntaxContext) -> Option<Self> {
-        Some(Self { value, ctxt })
-    }
-}
-
 #[inline(always)]
 fn is_equalities(op: &BinaryOp) -> bool {
     matches!(
@@ -84,16 +78,14 @@ fn evaluate_typeof(unary: &UnaryExpr) -> Option<(&str, SyntaxContext)> {
 
 fn evaluate_unary_comparison(unary: &UnaryExpr, other: &Expr, op: BinaryOp) -> Option<Token> {
     if let Some((kind, ctxt)) = evaluate_typeof(unary) {
-        if let Some(str_lit) = other.as_lit().and_then(Lit::as_str) {
-            return Token::some(
-                if str_lit.value == kind {
-                    op == BinaryOp::EqEq || op == BinaryOp::EqEqEq
-                } else {
-                    op == BinaryOp::NotEq || op == BinaryOp::NotEqEq
-                },
-                ctxt,
-            );
-        }
+        return other.as_lit().and_then(Lit::as_str).map(|str| Token {
+            value: if str.value == kind {
+                op == BinaryOp::EqEq || op == BinaryOp::EqEqEq
+            } else {
+                op == BinaryOp::NotEq || op == BinaryOp::NotEqEq
+            },
+            ctxt,
+        });
     }
 
     if unary.op == UnaryOp::Void && unary.arg.as_lit().is_some_and(Lit::is_num) {
@@ -136,7 +128,10 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
         Expr::Ident(ident) => {
             let name = ident.sym.as_ref();
             if is_built_in_constructor(name) || is_built_in_member(name) {
-                return Token::some(true, ident.ctxt);
+                return Some(Token {
+                    value: true,
+                    ctxt: ident.ctxt,
+                });
             }
         }
         _ => {}
