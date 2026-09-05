@@ -18,7 +18,6 @@ panic = "abort"
 [dependencies]
 swc_core = { version = "77.1.*", features = [
   "ecma_ast",
-  "ecma_visit",
   "ecma_plugin_transform",
 ] }
 

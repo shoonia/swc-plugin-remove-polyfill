@@ -11,7 +11,6 @@
     "scripts": {
         "build": "cargo build-wasip1 --release",
         "test": "cargo test",
-        "fixture": "UPDATE=1 cargo test --test fixture",
         "prepack": "npm test && npm run build"
     },
     "files": [],
