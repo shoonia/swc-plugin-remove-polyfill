@@ -98,9 +98,7 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
     match node {
         Expr::Member(member) => {
             if let Some((_, ctxt)) = evaluate_member(member) {
-                Token::some(true, ctxt)
-            } else {
-                None
+                return Token::some(true, ctxt);
             }
         }
         Expr::Bin(bin) => {
@@ -121,7 +119,6 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                     }
                 }
             }
-            None
         }
         Expr::Unary(unary) => {
             if unary.op != UnaryOp::Bang {
@@ -141,17 +138,15 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                     return Token::some(false, i.ctxt);
                 }
             }
-
-            None
         }
         Expr::Ident(ident) => {
             let name = ident.sym.as_ref();
             if is_built_in_constructor(name) || is_built_in_member(name) {
-                Token::some(true, ident.ctxt)
-            } else {
-                None
+                return Token::some(true, ident.ctxt);
             }
         }
-        _ => None,
+        _ => {}
     }
+
+    None
 }
