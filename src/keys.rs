@@ -29,6 +29,7 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
                 | "getOwnPropertyDescriptors"
                 | "fromEntries"
                 | "hasOwn"
+                | "groupBy"
         ),
         "Symbol" => matches!(prop, "for" | "keyFor"),
         "Promise" => matches!(
@@ -52,6 +53,51 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
                 | "set"
                 | "setPrototypeOf"
         ),
+        "Number" => matches!(
+            prop,
+            "isFinite" | "isInteger" | "isNaN" | "isSafeInteger" | "parseFloat" | "parseInt"
+        ),
+        "String" => matches!(prop, "fromCharCode" | "fromCodePoint" | "raw"),
+        "Math" => matches!(
+            prop,
+            "abs"
+                | "acos"
+                | "asin"
+                | "atan"
+                | "atan2"
+                | "ceil"
+                | "cos"
+                | "exp"
+                | "floor"
+                | "log"
+                | "max"
+                | "min"
+                | "pow"
+                | "random"
+                | "round"
+                | "sin"
+                | "sqrt"
+                | "tan"
+                | "imul"
+                | "acosh"
+                | "asinh"
+                | "atanh"
+                | "cbrt"
+                | "clz32"
+                | "cosh"
+                | "expm1"
+                | "fround"
+                | "hypot"
+                | "log10"
+                | "log1p"
+                | "log2"
+                | "sign"
+                | "sinh"
+                | "tanh"
+                | "trunc"
+        ),
+        "JSON" => matches!(prop, "parse" | "stringify"),
+        "Error" => prop == "captureStackTrace",
         _ => false,
     }
 }
