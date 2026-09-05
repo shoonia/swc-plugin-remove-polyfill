@@ -36,6 +36,22 @@ pub fn function_group(obj: &str, prop: &str) -> bool {
             "all" | "race" | "reject" | "resolve" | "allSettled" | "any" | "withResolvers"
         ),
         "Proxy" => prop == "revocable",
+        "Reflect" => matches!(
+            prop,
+            "apply"
+                | "construct"
+                | "defineProperty"
+                | "deleteProperty"
+                | "get"
+                | "getOwnPropertyDescriptor"
+                | "getPrototypeOf"
+                | "has"
+                | "isExtensible"
+                | "ownKeys"
+                | "preventExtensions"
+                | "set"
+                | "setPrototypeOf"
+        ),
         _ => false,
     }
 }
