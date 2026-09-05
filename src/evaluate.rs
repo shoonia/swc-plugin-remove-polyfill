@@ -12,6 +12,11 @@ pub struct Token {
     pub ctxt: SyntaxContext,
 }
 
+struct Match {
+    kind: &'static str,
+    ctxt: SyntaxContext,
+}
+
 #[inline(always)]
 fn is_equalities(op: &BinaryOp) -> bool {
     matches!(
@@ -25,7 +30,7 @@ fn is_prototype_ident(prop: &MemberProp) -> bool {
     prop.as_ident().is_some_and(|i| i.sym == "prototype")
 }
 
-fn evaluate_member(member: &MemberExpr) -> Option<(&str, SyntaxContext)> {
+fn evaluate_member(member: &MemberExpr) -> Option<Match> {
     let MemberProp::Ident(prop) = &member.prop else {
         return None;
     };
@@ -36,18 +41,28 @@ fn evaluate_member(member: &MemberExpr) -> Option<(&str, SyntaxContext)> {
             let p = prop.sym.as_ref();
 
             if is_static_method(o, p) {
-                return Some((FUN, obj.ctxt));
+                return Some(Match {
+                    kind: FUN,
+                    ctxt: obj.ctxt,
+                });
             }
 
             if is_well_known_symbol(o, p) {
-                return Some((SYM, obj.ctxt));
+                return Some(Match {
+                    kind: SYM,
+                    ctxt: obj.ctxt,
+                });
             }
         }
         Expr::Member(memb) => {
             if is_prototype_ident(&memb.prop) {
                 if let Expr::Ident(ident) = &*memb.obj {
-                    return is_prototype_method(ident.sym.as_ref(), prop.sym.as_ref())
-                        .then_some((FUN, ident.ctxt));
+                    return is_prototype_method(ident.sym.as_ref(), prop.sym.as_ref()).then_some(
+                        Match {
+                            kind: FUN,
+                            ctxt: ident.ctxt,
+                        },
+                    );
                 }
             }
         }
@@ -57,7 +72,7 @@ fn evaluate_member(member: &MemberExpr) -> Option<(&str, SyntaxContext)> {
     None
 }
 
-fn evaluate_typeof(unary: &UnaryExpr) -> Option<(&str, SyntaxContext)> {
+fn evaluate_typeof(unary: &UnaryExpr) -> Option<Match> {
     if unary.op != UnaryOp::TypeOf {
         return None;
     }
@@ -70,11 +85,17 @@ fn evaluate_typeof(unary: &UnaryExpr) -> Option<(&str, SyntaxContext)> {
         let name = i.sym.as_ref();
 
         if is_built_in_constructor(name) {
-            return Some((FUN, i.ctxt));
+            return Some(Match {
+                kind: FUN,
+                ctxt: i.ctxt,
+            });
         }
 
         if is_built_in_member(name) {
-            return Some((OBJ, i.ctxt));
+            return Some(Match {
+                kind: OBJ,
+                ctxt: i.ctxt,
+            });
         }
     }
 
@@ -82,22 +103,22 @@ fn evaluate_typeof(unary: &UnaryExpr) -> Option<(&str, SyntaxContext)> {
 }
 
 fn evaluate_unary_comparison(unary: &UnaryExpr, other: &Expr, op: BinaryOp) -> Option<Token> {
-    if let Some((kind, ctxt)) = evaluate_typeof(unary) {
+    if let Some(mtc) = evaluate_typeof(unary) {
         return other.as_lit().and_then(Lit::as_str).map(|str| Token {
-            value: if str.value == kind {
+            value: if str.value == mtc.kind {
                 op == BinaryOp::EqEq || op == BinaryOp::EqEqEq
             } else {
                 op == BinaryOp::NotEq || op == BinaryOp::NotEqEq
             },
-            ctxt,
+            ctxt: mtc.ctxt,
         });
     }
 
     if unary.op == UnaryOp::Void && unary.arg.as_lit().is_some_and(Lit::is_num) {
         if let Some(member) = other.as_member() {
-            return evaluate_member(member).map(|(_, ctxt)| Token {
+            return evaluate_member(member).map(|mtc| Token {
                 value: op == BinaryOp::NotEq || op == BinaryOp::NotEqEq,
-                ctxt,
+                ctxt: mtc.ctxt,
             });
         }
     }
@@ -108,7 +129,10 @@ fn evaluate_unary_comparison(unary: &UnaryExpr, other: &Expr, op: BinaryOp) -> O
 pub fn evaluate(node: &Expr) -> Option<Token> {
     match node {
         Expr::Member(member) => {
-            return evaluate_member(member).map(|(_, ctxt)| Token { value: true, ctxt })
+            return evaluate_member(member).map(|mtc| Token {
+                value: true,
+                ctxt: mtc.ctxt,
+            })
         }
         Expr::Bin(bin) => {
             if is_equalities(&bin.op) {
@@ -154,7 +178,10 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
             }
 
             if let Some(memb) = unary.arg.as_member() {
-                return evaluate_member(memb).map(|(_, ctxt)| Token { value: false, ctxt });
+                return evaluate_member(memb).map(|mtc| Token {
+                    value: false,
+                    ctxt: mtc.ctxt,
+                });
             }
         }
         Expr::Ident(ident) => {
