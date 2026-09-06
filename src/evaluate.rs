@@ -1,7 +1,7 @@
 use crate::keys::*;
 use std::matches;
 use swc_core::common::SyntaxContext;
-use swc_core::ecma::ast::{BinaryOp, Expr, Lit, MemberExpr, MemberProp, UnaryExpr, UnaryOp};
+use swc_core::ecma::ast::{BinaryOp, Expr, Ident, Lit, MemberExpr, MemberProp, UnaryExpr, UnaryOp};
 
 const FUN: &str = "function";
 const OBJ: &str = "object";
@@ -25,9 +25,12 @@ fn is_equalities(op: &BinaryOp) -> bool {
     )
 }
 
-#[inline(always)]
-fn is_prototype_ident(prop: &MemberProp) -> bool {
-    prop.as_ident().is_some_and(|i| i.sym == "prototype")
+fn as_prototype(obj: &MemberExpr) -> Option<&Ident> {
+    if obj.prop.as_ident().is_some_and(|i| i.sym == "prototype") {
+        obj.obj.as_ident()
+    } else {
+        None
+    }
 }
 
 fn evaluate_member(member: &MemberExpr) -> Option<Match> {
@@ -55,15 +58,13 @@ fn evaluate_member(member: &MemberExpr) -> Option<Match> {
             }
         }
         Expr::Member(memb) => {
-            if is_prototype_ident(&memb.prop) {
-                if let Expr::Ident(ident) = &*memb.obj {
-                    return is_prototype_method(ident.sym.as_ref(), prop.sym.as_ref()).then_some(
-                        Match {
-                            kind: FUN,
-                            ctxt: ident.ctxt,
-                        },
-                    );
-                }
+            if let Some(ident) = as_prototype(memb) {
+                return is_prototype_method(ident.sym.as_ref(), prop.sym.as_ref()).then_some(
+                    Match {
+                        kind: FUN,
+                        ctxt: ident.ctxt,
+                    },
+                );
             }
         }
         _ => {}
@@ -158,15 +159,11 @@ pub fn evaluate(node: &Expr) -> Option<Token> {
                             });
                         }
                     } else if let Some(memb) = bin.right.as_member() {
-                        if is_prototype_ident(&memb.prop) {
-                            if let Expr::Ident(ident) = &*memb.obj {
-                                return is_prototype_method(ident.sym.as_ref(), key).then_some(
-                                    Token {
-                                        value: true,
-                                        ctxt: ident.ctxt,
-                                    },
-                                );
-                            }
+                        if let Some(ident) = as_prototype(&memb) {
+                            return is_prototype_method(ident.sym.as_ref(), key).then_some(Token {
+                                value: true,
+                                ctxt: ident.ctxt,
+                            });
                         }
                     }
                 }
